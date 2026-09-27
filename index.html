@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratório de Recarga 3D Pro - Customização Total & Voo Balístico</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #09090b; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        canvas { display: block; width: 100%; height: 100%; outline: none; }
+    </style>
+</head>
+<body class="min-h-full bg-zinc-950 text-zinc-100 flex flex-col overflow-y-auto select-none">
+
+    <header class="bg-zinc-900/90 backdrop-blur border-b border-zinc-800 px-6 py-4 flex items-center justify-between shrink-0 sticky top-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-lg shadow-lg shadow-amber-500/10">
+                <i class="fa-solid fa-cube"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg tracking-wide text-zinc-100 flex items-center gap-2">
+                    BALLISTIC LAB <span class="text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">3D PRO v3.0</span>
+                </h1>
+                <p class="text-xs text-zinc-400">Customização Total de Arma, Pente, Projétil Pontudo & Voo 3D Cinemático</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+            <div class="hidden md:flex items-center space-x-6 text-xs font-mono bg-zinc-950 px-4 py-2 rounded-lg border border-zinc-800">
+                <div><span class="text-zinc-500">ARMA:</span> <span id="headerWeaponName" class="text-amber-400 font-semibold">Tático Viper M4</span></div>
+                <div class="h-3 w-px bg-zinc-800"></div>
+                <div><span class="text-zinc-500">PENTE:</span> <span id="headerMagName" class="text-cyan-400 font-semibold">Estendido 30R</span></div>
+            </div>
+            <button onclick="resetLab()" class="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-medium rounded-lg transition border border-zinc-700 flex items-center gap-2">
+                <i class="fa-solid fa-rotate-right"></i> Reiniciar
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- Left Panel: Customization Tabs / Wizard -->
+        <div class="w-full lg:w-[450px] bg-zinc-900/60 border-r border-zinc-800 flex flex-col shrink-0 z-20">
+            <!-- Navigation Tabs -->
+            <div class="grid grid-cols-5 border-b border-zinc-800 bg-zinc-900/80 sticky top-0 z-30" id="stepTabs">
+                <button onclick="switchTab(1)" class="tab-btn py-3 px-1 text-center border-b-2 border-amber-500 text-amber-400 font-medium text-[11px] transition" data-tab="1">
+                    <i class="fa-solid fa-gun block text-xs mb-1"></i> Arma
+                </button>
+                <button onclick="switchTab(2)" class="tab-btn py-3 px-1 text-center border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 font-medium text-[11px] transition" data-tab="2">
+                    <i class="fa-solid fa-box-archive block text-xs mb-1"></i> Pente
+                </button>
+                <button onclick="switchTab(3)" class="tab-btn py-3 px-1 text-center border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 font-medium text-[11px] transition" data-tab="3">
+                    <i class="fa-solid fa-bullseye block text-xs mb-1"></i> Projétil
+                </button>
+                <button onclick="switchTab(4)" class="tab-btn py-3 px-1 text-center border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 font-medium text-[11px] transition" data-tab="4">
+                    <i class="fa-solid fa-fire block text-xs mb-1"></i> Pólvora
+                </button>
+                <button onclick="switchTab(5)" class="tab-btn py-3 px-1 text-center border-b-2 border-transparent text-zinc-400 hover:text-zinc-200 font-medium text-[11px] transition" data-tab="5">
+                    <i class="fa-solid fa-gauge-high block text-xs mb-1"></i> Disparo
+                </button>
+            </div>
+
+            <!-- Tab Content Forms -->
+            <div class="flex-1 p-6 overflow-y-auto space-y-6" id="tabContentContainer">
+                
+                <!-- TAB 1: Weapon Customization -->
+                <div class="tab-panel space-y-5" id="panel-1">
+                    <div>
+                        <h2 class="text-base font-semibold text-zinc-100 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-xs flex items-center justify-center font-mono border border-amber-500/30">1</span>
+                            Customização da Arma Inteira
+                        </h2>
+                        <p class="text-xs text-zinc-400 mt-1">Modifique a plataforma, coronha, acabamento e acessórios táticos.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Nome da Plataforma</label>
+                            <input type="text" id="weaponNameInput" value="Tático Viper M4" oninput="updateWeaponState()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-amber-500 font-mono">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Modelo Base da Arma</label>
+                            <select id="weaponPlatformSelect" onchange="updateWeaponState()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-amber-500">
+                                <option value="rifle">Rifle de Assalto / Carbina (M4)</option>
+                                <option value="pistol">Pistola Semi-Automática Tática</option>
+                                <option value="smg">Submetralhadora Compacta (SMG)</option>
+                                <option value="sniper">Fuzil de Precisão Longo Alcance</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Cor / Acabamento Tático</label>
+                            <div class="grid grid-cols-4 gap-2">
+                                <button type="button" onclick="setWeaponColor('#27272a', this)" class="weapon-color-btn p-3 rounded-xl border-2 border-amber-500 bg-zinc-800 text-xs font-medium text-center transition">Preto</button>
+                                <button type="button" onclick="setWeaponColor('#78350f', this)" class="weapon-color-btn p-3 rounded-xl border-2 border-zinc-800 bg-amber-950 text-xs font-medium text-center transition">Tan / Areia</button>
+                                <button type="button" onclick="setWeaponColor('#065f46', this)" class="weapon-color-btn p-3 rounded-xl border-2 border-zinc-800 bg-emerald-950 text-xs font-medium text-center transition">Olive Drab</button>
+                                <button type="button" onclick="setWeaponColor('#1e3a8a', this)" class="weapon-color-btn p-3 rounded-xl border-2 border-zinc-800 bg-blue-950 text-xs font-medium text-center transition">Azul Aço</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Acessórios de Cano</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" onclick="setBarrelAccessory('none', this)" class="barrel-acc-btn p-2.5 rounded-xl border border-amber-500 bg-amber-500/10 text-amber-300 text-xs font-medium text-center transition">Padrão</button>
+                                <button type="button" onclick="setBarrelAccessory('suppressor', this)" class="barrel-acc-btn p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 text-xs font-medium text-center transition">Silenciador</button>
+                                <button type="button" onclick="setBarrelAccessory('compensator', this)" class="barrel-acc-btn p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 text-xs font-medium text-center transition">Compensador</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="switchTab(2)" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold rounded-xl text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20">
+                        Próximo: Modificar Pente <i class="fa-solid fa-arrow-right"></i>
+                    </button>
+                </div>
+
+                <!-- TAB 2: Magazine (Pente) Customization -->
+                <div class="tab-panel space-y-5 hidden" id="panel-2">
+                    <div>
+                        <h2 class="text-base font-semibold text-zinc-100 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-xs flex items-center justify-center font-mono border border-amber-500/30">2</span>
+                            Modificação do Pente (Carregador)
+                        </h2>
+                        <p class="text-xs text-zinc-400 mt-1">Altere a capacidade, formato e material do pente inserido na arma.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-2">Tipo de Pente / Carregador</label>
+                            <div class="space-y-2.5">
+                                <div onclick="setMagType('standard', 15, this)" class="mag-card p-3 rounded-xl border-2 border-amber-500 bg-amber-500/10 cursor-pointer transition">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <span class="font-semibold text-sm text-zinc-100">Padrão Metálico (15 Munições)</span>
+                                        <span class="text-xs font-mono text-amber-400">Leve</span>
+                                    </div>
+                                    <p class="text-xs text-zinc-400">Perfil compacto ideal para porte velado e peso equilibrado.</p>
+                                </div>
+                                <div onclick="setMagType('extended', 30, this)" class="mag-card p-3 rounded-xl border-2 border-zinc-800 bg-zinc-950 cursor-pointer transition hover:border-zinc-700">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <span class="font-semibold text-sm text-zinc-100">Pente Estendido (30 Munições)</span>
+                                        <span class="text-xs font-mono text-cyan-400">Tático</span>
+                                    </div>
+                                    <p class="text-xs text-zinc-400">Maior autonomia de disparo com perfil alongado visível.</p>
+                                </div>
+                                <div onclick="setMagType('drum', 75, this)" class="mag-card p-3 rounded-xl border-2 border-zinc-800 bg-zinc-950 cursor-pointer transition hover:border-zinc-700">
+                                    <div class="flex justify-between items-center mb-0.5">
+                                        <span class="font-semibold text-sm text-zinc-100">Carregador Tambor (75 Munições)</span>
+                                        <span class="text-xs font-mono text-emerald-400">Pesado / Alto Volume</span>
+                                    </div>
+                                    <p class="text-xs text-zinc-400">Capacidade máxima de supressão de fogo contínuo.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Material do Pente</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button type="button" onclick="setMagMaterial('polimero', this)" class="mag-mat-btn p-2.5 rounded-xl border border-amber-500 bg-amber-500/10 text-amber-300 text-xs font-medium text-center transition">Polímero Tático</button>
+                                <button type="button" onclick="setMagMaterial('aco', this)" class="mag-mat-btn p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 text-xs font-medium text-center transition">Aço Escovado</button>
+                                <button type="button" onclick="setMagMaterial('aluminio', this)" class="mag-mat-btn p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 text-xs font-medium text-center transition">Alumínio Anodizado</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex space-x-3 pt-2">
+                        <button onclick="switchTab(1)" class="w-1/3 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl text-sm transition">Voltar</button>
+                        <button onclick="switchTab(3)" class="w-2/3 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold rounded-xl text-sm transition shadow-lg shadow-amber-500/20">Próximo: Projétil & Ponta <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Projectile & Bullet Sharpness (Independent of Casing) -->
+                <div class="tab-panel space-y-5 hidden" id="panel-3">
+                    <div>
+                        <h2 class="text-base font-semibold text-zinc-100 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-xs flex items-center justify-center font-mono border border-amber-500/30">3</span>
+                            Projétil e Nitidez da Ponta (Independente do Estojo)
+                        </h2>
+                        <p class="text-xs text-zinc-400 mt-1">Deixe a ponta do projétil extremamente afiada e pontuda sem precisar esticar o estojo.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Calibre Base do Cartucho</label>
+                            <select id="caliberSelect" onchange="updateCaliberSettings()" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-amber-500">
+                                <option value="9mm">9x19mm Parabellum</option>
+                                <option value="556">5.56x45mm NATO</option>
+                                <option value="308"> .308 Winchester (Fuzil Pesado)</option>
+                                <option value="45acp">.45 ACP</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="text-xs font-medium text-zinc-300">Comprimento do Estojo (Volume Fixo)</label>
+                                <span id="caseLengthVal" class="font-mono text-sm text-amber-400 font-semibold">19.1 mm</span>
+                            </div>
+                            <input type="range" id="caseLengthRange" min="15.0" max="50.0" step="0.5" value="19.1" oninput="updateCaseLength(this.value)" class="w-full accent-amber-500 bg-zinc-800 rounded-lg h-2 cursor-pointer">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="text-xs font-medium text-zinc-300">Afiação / Nitidez da Ponta (Ponta Bem Pontuda)</label>
+                                <span id="bulletSharpnessVal" class="font-mono text-sm text-cyan-400 font-semibold">Super Pontudo (VLD Match)</span>
+                            </div>
+                            <input type="range" id="bulletSharpnessRange" min="1.0" max="4.0" step="0.1" value="3.0" oninput="updateBulletSharpness(this.value)" class="w-full accent-cyan-500 bg-zinc-800 rounded-lg h-2 cursor-pointer">
+                            <div class="flex justify-between text-[10px] text-zinc-500 font-mono mt-1">
+                                <span>Chato (Round Nose)</span>
+                                <span>Padrão</span>
+                                <span>Super Afiado / Agulha</span>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="text-xs font-medium text-zinc-300">Peso do Projétil</label>
+                                <span id="bulletWeightVal" class="font-mono text-sm text-amber-400 font-semibold">124 gr</span>
+                            </div>
+                            <input type="range" id="bulletWeightRange" min="50" max="300" step="5" value="124" oninput="updateBulletWeight(this.value)" class="w-full accent-amber-500 bg-zinc-800 rounded-lg h-2 cursor-pointer">
+                        </div>
+                    </div>
+
+                    <div class="flex space-x-3 pt-2">
+                        <button onclick="switchTab(2)" class="w-1/3 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl text-sm transition">Voltar</button>
+                        <button onclick="switchTab(4)" class="w-2/3 py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-semibold rounded-xl text-sm transition shadow-lg shadow-amber-500/20">Próximo: Pólvora <i class="fa-solid fa-arrow-right"></i></button>
+                    </div>
+                </div>
+
+                <!-- TAB 4: Powder & Priming -->
+                <div class="tab-panel space-y-5 hidden" id="panel-4">
+                    <div>
+                        <h2 class="text-base font-semibold text-zinc-100 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 text-xs flex items-center justify-center font-mono border border-amber-500/30">4</span>
+                            Dosagem de Pólvora e Propulsão
+                        </h2>
+                        <p class="text-xs text-zinc-400 mt-1">Ajuste a quantidade de grãos de pólvora para definir a velocidade e energia.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-zinc-300 mb-1.5">Tipo de Pólvora</label>
+                            <select id="powderTypeSelect" class="w-full bg-zinc-950 border border-zinc-800 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-amber-500">
+                                <option value="fast">Pólvora Rápida (Queima Imediata)</option>
+                                <option value="medium">Pólvora Média (Padrão Equilibrado)</option>
+                                <option value="slow">Pólvora Lenta (Magnum / Longo Alcance)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between items-center mb-1.5">
+                                <label class="text-xs font-medium text-zinc-300">Quantidade de Pólvora (Grãos)</label>
+                                <span id="powderGrainsVal" class="font-mono text-sm text-amber-400 font-semibold">6.5 gr</span>
+                            </div>
+                            <input type="range" id="powderGrainsRange" min="2.0" max="45.0" step="0.5" value="6.5" oninput="updatePowder(this.value)" class="w-full accent-amber-500 bg-zinc-800 rounded-lg h-2 cursor-pointer">
+                        </div>
+
+                        <div class="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-xs text-emerald-300 flex items-center gap-2.5">
+                            <i class="fa-solid fa-circle-check text-emerald-400 text-base"></i>
+                            <span>Geometria do projétil e carga prontos para teste balístico em 3D.</span>
+                        </div>
+                    </div>
+
+                    <div class="flex space-x-3 pt-2">
+                        <button onclick="switchTab(3)" class="w-1/3 py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl text-sm transition">Voltar</button>
+                        <button onclick="switchTab(5)" class="w-2/3 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play"></i> Ir Para Disparo e Voo 3D
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB 5: Fire & Telemetry -->
+                <div class="tab-panel space-y-5 hidden" id="panel-5">
+                    <div>
+                        <h2 class="text-base font-semibold text-zinc-100 flex items-center gap-2">
+                            <span class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 text-xs flex items-center justify-center font-mono border border-emerald-500/30">5</span>
+                            Disparo Balístico e Câmera Livre Automática
+                        </h2>
+                        <p class="text-xs text-zinc-400 mt-1">Dispare a arma customizada. A câmera 3D seguirá automaticamente o projétil pontudo voando até o alvo!</p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <div class="bg-zinc-950 border border-zinc-800 rounded-xl p-4 space-y-3">
+                            <div class="flex justify-between text-xs">
+                                <span class="text-zinc-400">Velocidade de Saída:</span>
+                                <span id="resVelocity" class="font-mono text-emerald-400 font-bold">420 m/s</span>
+                            </div>
+                            <div class="flex justify-between text-xs">
+                                <span class="text-zinc-400">Energia Cinética:</span>
+                                <span id="resEnergy" class="font-mono text-amber-400 font-bold">680 Joules</span>
+                            </div>
+                            <div class="flex justify-between text-xs">
+                                <span class="text-zinc-400">Coeficiente Balístico (Ponta):</span>
+                                <span id="resBC" class="font-mono text-cyan-400 font-bold">0.582 (Excelente)</span>
+                            </div>
+                        </div>
+
+                        <button onclick="triggerFireShot()" id="fireButton" class="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-zinc-950 font-bold rounded-xl text-sm transition shadow-xl shadow-amber-500/20 flex items-center justify-center gap-3">
+                            <i class="fa-solid fa-crosshairs text-lg"></i> ATIRAR (VOO 3D AUTOMÁTICO)
+                        </button>
+                    </div>
+
+                    <div class="flex space-x-3 pt-2">
+                        <button onclick="switchTab(4)" class="w-full py-3 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-medium rounded-xl text-sm transition">Voltar e Ajustar</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Right Panel: 3D Interactive Workbench & Cinematic Firing Range Canvas -->
+        <div class="flex-1 bg-zinc-950 flex flex-col relative min-h-[500px]">
+            
+            <!-- Top Sub-Toolbar -->
+            <div class="bg-zinc-900/80 border-b border-zinc-800 px-6 py-3 flex items-center justify-between z-10 shrink-0">
+                <div class="flex items-center space-x-3">
+                    <span id="canvasModeLabel" class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-mono bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                        <i class="fa-solid fa-cube mr-1.5"></i> Visualizador 3D Interativo (Arma & Pente Customizáveis)
+                    </span>
+                </div>
+                <div class="flex items-center space-x-3 text-xs text-zinc-400 font-mono">
+                    <span>STATUS DA CÂMERA:</span>
+                    <span id="cameraStatusLabel" class="px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">LIVRE (ORBITAL)</span>
+                </div>
+            </div>
+
+            <!-- Three.js 3D Canvas Container -->
+            <div id="canvasContainer" class="flex-1 relative overflow-hidden">
+                <div id="webgl-output" class="w-full h-full"></div>
+
+                <!-- Flight telemetry overlay during cinematic shot -->
+                <div id="flightTelemetryOverlay" class="absolute top-6 left-6 bg-zinc-900/80 backdrop-blur border border-zinc-800 rounded-xl p-4 font-mono text-xs space-y-2 hidden z-30 pointer-events-none">
+                    <div class="text-amber-400 font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-plane-up"></i> TELEMETRIA DE VOO 3D
+                    </div>
+                    <div class="flex justify-between gap-6">
+                        <span class="text-zinc-400">Distância ao Alvo:</span>
+                        <span id="telemetryDist" class="text-emerald-400 font-bold">0.0 m</span>
+                    </div>
+                    <div class="flex justify-between gap-6">
+                        <span class="text-zinc-400">Velocidade Atual:</span>
+                        <span id="telemetrySpeed" class="text-cyan-400 font-bold">420 m/s</span>
+                    </div>
+                </div>
+
+                <!-- Impact Result Modal Overlay -->
+                <div id="impactModal" class="absolute inset-0 bg-zinc-950/80 backdrop-blur-md z-40 flex items-center justify-center p-6 hidden">
+                    <div class="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-2xl p-6 shadow-2xl space-y-5 text-center">
+                        <div class="w-16 h-16 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto text-2xl shadow-lg">
+                            <i class="fa-solid fa-bullseye"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-bold text-zinc-100">Impacto no Alvo Registrado!</h3>
+                            <p class="text-xs text-zinc-400 mt-1">O projétil pontudo atingiu o alvo com precisão balística 3D.</p>
+                        </div>
+                        <div class="bg-zinc-950 p-3 rounded-xl border border-zinc-800 text-left space-y-1.5 font-mono text-xs">
+                            <div class="flex justify-between"><span class="text-zinc-500">Ponta:</span> <span id="modalResTip" class="text-cyan-400">Super Pontudo</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-500">Velocidade Impacto:</span> <span id="modalResVel" class="text-emerald-400">385 m/s</span></div>
+                            <div class="flex justify-between"><span class="text-zinc-500">Agrupamento:</span> <span id="modalResGroup" class="text-amber-400">0.45 MOA</span></div>
+                        </div>
+                        <button onclick="returnToWorkbench()" class="w-full py-3 bg-amber-500 hover:bg-amber-400 text-zinc-950 font-bold rounded-xl text-sm transition shadow-lg">
+                            Voltar à Bancada de Customização
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Live Telemetry Bar -->
+            <div class="bg-zinc-900/90 border-t border-zinc-800 px-6 py-3 flex items-center justify-between text-xs font-mono shrink-0">
+                <div class="flex items-center space-x-6">
+                    <div><span class="text-zinc-500">ARMA:</span> <span id="footWeapon" class="text-amber-400">Rifle M4</span></div>
+                    <div><span class="text-zinc-500">PENTE:</span> <span id="footMag" class="text-cyan-400">30 Munições</span></div>
+                    <div><span class="text-zinc-500">PONTA:</span> <span id="footTip" class="text-emerald-400">Super Pontudo (3.0)</span></div>
+                </div>
+                <div class="text-zinc-500 text-[11px]">
+                    <i class="fa-solid fa-info-circle mr-1 text-amber-500"></i> Clique e arraste para rotacionar a arma na bancada 3D.
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        // Global App State
+        let appState = {
+            weaponName: "Tático Viper M4",
+            platform: "rifle",
+            weaponColor: 0x27272a,
+            barrelAcc: "none",
+            magType: "extended",
+            magCapacity: 30,
+            magMaterial: "polimero",
+            caliber: "9mm",
+            caseLength: 19.1,
+            bulletSharpness: 3.0, // Independent sharpness slider
+            bulletWeight: 124,
+            powderType: "medium",
+            powderGrains: 6.5,
+            mode: "workbench" // 'workbench' or 'flight'
+        };
+
+        // Three.js Core Variables
+        let scene, camera, renderer;
+        let weaponGroup, bulletMesh, targetMesh;
+        let isFiring = false;
+        let flightProgress = 0;
+        let flightPath = [];
+        let totalFlightDist = 100; // meters translated to units
+
+        // Initialize Three.js scene on load
+        function initThree() {
+            const container = document.getElementById('webgl-output');
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x09090b);
+            scene.fog = new THREE.FogExp2(0x09090b, 0.015);
+
+            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(4, 2, 6);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(10, 20, 10);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            const pointLight = new THREE.PointLight(0xf59e0b, 2, 10);
+            pointLight.position.set(-2, 1, 2);
+            scene.add(pointLight);
+
+            // Grid floor for workbench
+            const grid = new THREE.GridHelper(30, 30, 0xf59e0b, 0x27272a);
+            grid.position.y = -1.5;
+            scene.add(grid);
+
+            buildWeapon3D();
+
+            // Window resize handler
+            window.addEventListener('resize', onWindowResize);
+
+            // Mouse rotation interaction for workbench
+            let isDragging = false;
+            let prevMousePos = { x: 0, y: 0 };
+
+            container.addEventListener('mousedown', (e) => {
+                if (appState.mode === 'workbench') {
+                    isDragging = true;
+                    prevMousePos = { x: e.clientX, y: e.clientY };
+                }
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (isDragging && appState.mode === 'workbench' && weaponGroup) {
+                    const deltaX = e.clientX - prevMousePos.x;
+                    const deltaY = e.clientY - prevMousePos.y;
+                    weaponGroup.rotation.y += deltaX * 0.008;
+                    weaponGroup.rotation.x += deltaY * 0.008;
+                    prevMousePos = { x: e.clientX, y: e.clientY };
+                }
+            });
+
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            animate();
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('webgl-output');
+            if(!container) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function buildWeapon3D() {
+            if (weaponGroup) {
+                scene.remove(weaponGroup);
+            }
+
+            weaponGroup = new THREE.Group();
+
+            const weaponMat = new THREE.MeshStandardMaterial({ 
+                color: appState.weaponColor, 
+                roughness: 0.4, 
+                metalness: 0.8 
+            });
+
+            const accentMat = new THREE.MeshStandardMaterial({ 
+                color: 0x18181b, 
+                roughness: 0.6, 
+                metalness: 0.2 
+            });
+
+            // 1. Receiver / Body based on platform
+            let bodyGeo;
+            if (appState.platform === 'rifle') {
+                bodyGeo = new THREE.BoxGeometry(0.8, 0.6, 2.5);
+            } else if (appState.platform === 'pistol') {
+                bodyGeo = new THREE.BoxGeometry(0.35, 0.5, 1.4);
+            } else if (appState.platform === 'smg') {
+                bodyGeo = new THREE.BoxGeometry(0.5, 0.5, 1.8);
+            } else { // sniper
+                bodyGeo = new THREE.BoxGeometry(0.6, 0.6, 3.2);
+            }
+            const bodyMesh = new THREE.Mesh(bodyGeo, weaponMat);
+            bodyMesh.castShadow = true;
+            weaponGroup.add(bodyMesh);
+
+            // 2. Barrel
+            let barrelLen = appState.platform === 'sniper' ? 3.5 : (appState.platform === 'rifle' ? 2.5 : 1.8);
+            const barrelGeo = new THREE.CylinderGeometry(0.12, 0.12, barrelLen, 16);
+            barrelGeo.rotateX(Math.PI / 2);
+            const barrelMesh = new THREE.Mesh(barrelGeo, accentMat);
+            barrelMesh.position.set(0, 0.1, 1.5 + barrelLen/2);
+            weaponGroup.add(barrelMesh);
+
+            // Barrel Accessory (Suppressor / Compensator)
+            if (appState.barrelAcc === 'suppressor') {
+                const suppGeo = new THREE.CylinderGeometry(0.18, 0.18, 1.2, 16);
+                suppGeo.rotateX(Math.PI / 2);
+                const suppMesh = new THREE.Mesh(suppGeo, accentMat);
+                suppMesh.position.set(0, 0.1, 1.5 + barrelLen + 0.6);
+                weaponGroup.add(suppMesh);
+            } else if (appState.barrelAcc === 'compensator') {
+                const compGeo = new THREE.BoxGeometry(0.3, 0.3, 0.5);
+                const compMesh = new THREE.Mesh(compGeo, accentMat);
+                compMesh.position.set(0, 0.1, 1.5 + barrelLen + 0.25);
+                weaponGroup.add(compMesh);
+            }
+
+            // 3. Customizable Magazine (Pente)
+            let magHeight = 1.0;
+            let magGeo;
+            if (appState.magType === 'standard') {
+                magHeight = 1.0;
+                magGeo = new THREE.BoxGeometry(0.35, magHeight, 0.6);
+            } else if (appState.magType === 'extended') {
+                magHeight = 1.8;
+                magGeo = new THREE.BoxGeometry(0.35, magHeight, 0.6);
+            } else { // drum
+                magHeight = 1.2;
+                magGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.5, 24);
+                magGeo.rotateZ(Math.PI / 2);
+            }
+
+            let magColor = 0x27272a;
+            if (appState.magMaterial === 'polimero') magColor = 0x18181b;
+            else if (appState.magMaterial === 'aco') magColor = 0x71717a;
+            else if (appState.magMaterial === 'aluminio') magColor = 0x94a3b8;
+
+            const magMat = new THREE.MeshStandardMaterial({ color: magColor, roughness: 0.5, metalness: 0.7 });
+            const magMesh = new THREE.Mesh(magGeo, magMat);
+            magMesh.position.set(0, -0.6 - magHeight/2, 0.2);
+            weaponGroup.add(magMesh);
+
+            // 4. Stock (Coronha)
+            if (appState.platform !== 'pistol') {
+                const stockGeo = new THREE.BoxGeometry(0.5, 0.7, 1.5);
+                const stockMesh = new THREE.Mesh(stockGeo, weaponMat);
+                stockMesh.position.set(0, -0.1, -1.8);
+                weaponGroup.add(stockMesh);
+            }
+
+            scene.add(weaponGroup);
+            weaponGroup.position.set(0, 0, 0);
+            weaponGroup.rotation.set(0.2, 0.6, 0);
+        }
+
+        function createCustomBullet3D() {
+            const bulletGroup = new THREE.Group();
+
+            // Casing body (cylinder)
+            const caseGeo = new THREE.CylinderGeometry(0.15, 0.15, 0.8, 16);
+            const caseMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.2, metalness: 0.9 });
+            const caseMesh = new THREE.Mesh(caseGeo, caseMat);
+            caseMesh.rotation.x = Math.PI / 2;
+            bulletGroup.add(caseMesh);
+
+            // Bullet Tip (Independent Sharpness control!)
+            // Higher sharpness = taller cone (sharper spire point) without stretching the case
+            const tipHeight = 0.4 * appState.bulletSharpness; 
+            const tipGeo = new THREE.ConeGeometry(0.15, tipHeight, 16);
+            const tipMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3, metalness: 0.85 });
+            const tipMesh = new THREE.Mesh(tipGeo, tipMat);
+            tipMesh.rotation.x = Math.PI / 2;
+            tipMesh.position.z = 0.4 + tipHeight / 2;
+            bulletGroup.add(tipMesh);
+
+            return bulletGroup;
+        }
+
+        function triggerFireShot() {
+            appState.mode = 'flight';
+            document.getElementById('canvasModeLabel').innerHTML = '<i class="fa-solid fa-plane-up mr-1.5 animate-pulse text-emerald-400"></i> VOO 3D CINEMATICO (Câmera Automática)';
+            document.getElementById('cameraStatusLabel').innerText = 'SEGUINDO PROJÉTIL (AUTOMÁTICO)';
+            document.getElementById('flightTelemetryOverlay').classList.remove('hidden');
+
+            // Remove weapon from scene
+            if (weaponGroup) scene.remove(weaponGroup);
+
+            // Create bullet mesh for flight
+            bulletMesh = createCustomBullet3D();
+            bulletMesh.scale.set(1.5, 1.5, 1.5);
+            scene.add(bulletMesh);
+
+            // Create Target downrange at Z = -80
+            const targetGeo = new THREE.BoxGeometry(3, 3, 0.2);
+            const targetMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
+            targetMesh = new THREE.Mesh(targetGeo, targetMat);
+            targetMesh.position.set(0, 0, -80);
+            scene.add(targetMesh);
+
+            // Target rings
+            const ringGeo = new THREE.RingGeometry(0.5, 1.2, 16);
+            const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+            const ring = new THREE.Mesh(ringGeo, ringMat);
+            ring.position.set(0, 0, -79.85);
+            scene.add(ring);
+
+            // Setup flight path (Straight line with slight wind drift)
+            flightProgress = 0;
+            isFiring = true;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (appState.mode === 'workbench' && weaponGroup) {
+                weaponGroup.rotation.y += 0.003;
+            } else if (appState.mode === 'flight' && isFiring) {
+                flightProgress += 0.008; // speed of flight
+
+                const startZ = 5;
+                const endZ = -80;
+                const currentZ = THREE.MathUtils.lerp(startZ, endZ, flightProgress);
+
+                // Slight aerodynamic arc based on bullet sharpness
+                const currentY = Math.sin(flightProgress * Math.PI) * 0.5;
+                const currentX = Math.sin(flightProgress * 4) * 0.1; // minor wind oscillation
+
+                bulletMesh.position.set(currentX, currentY, currentZ);
+                bulletMesh.rotation.y = Math.PI / 2;
+
+                // Automatic Cinematic Camera following the bullet ("camera livre automatica")
+                camera.position.set(currentX + 1.2, currentY + 0.8, currentZ + 3.0);
+                camera.lookAt(currentX, currentY, currentZ);
+
+                // Update Telemetry UI
+                const distRemaining = Math.max(0, (85 * (1 - flightProgress))).toFixed(1);
+                const speedNow = Math.max(150, Math.round(420 * (1 - flightProgress * 0.3)));
+                document.getElementById('telemetryDist').innerText = distRemaining + " m";
+                document.getElementById('telemetrySpeed').innerText = speedNow + " m/s";
+
+                if (flightProgress >= 1.0) {
+                    isFiring = false;
+                    showImpactResults();
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function showImpactResults() {
+            document.getElementById('flightTelemetryOverlay').classList.add('hidden');
+            document.getElementById('modalResTip').innerText = appState.bulletSharpness > 2.5 ? "Super Pontudo (VLD Match)" : "Arredondado";
+            document.getElementById('modalResVel').innerText = Math.round(380 + appState.powderGrains * 2) + " m/s";
+            document.getElementById('modalResGroup').innerText = (0.3 + (4.0 - appState.bulletSharpness) * 0.2).toFixed(2) + " MOA";
+            document.getElementById('impactModal').classList.remove('hidden');
+        }
+
+        function returnToWorkbench() {
+            document.getElementById('impactModal').classList.add('hidden');
+            appState.mode = 'workbench';
+            document.getElementById('canvasModeLabel').innerHTML = '<i class="fa-solid fa-cube mr-1.5"></i> Visualizador 3D Interativo (Arma & Pente Customizáveis)';
+            document.getElementById('cameraStatusLabel').innerText = 'LIVRE (ORBITAL)';
+            
+            if (bulletMesh) scene.remove(bulletMesh);
+            if (targetMesh) scene.remove(targetMesh);
+
+            camera.position.set(4, 2, 6);
+            camera.lookAt(0, 0, 0);
+            buildWeapon3D();
+            switchTab(1);
+        }
+
+        // Tab Switching & State Updaters
+        function switchTab(tabNum) {
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+            document.getElementById(`panel-${tabNum}`).classList.remove('hidden');
+
+            document.querySelectorAll('.tab-btn').forEach(b => {
+                b.classList.remove('border-amber-500', 'text-amber-400');
+                b.classList.add('border-transparent', 'text-zinc-400');
+            });
+            const active = document.querySelector(`[data-tab="${tabNum}"]`);
+            if (active) {
+                active.classList.remove('border-transparent', 'text-zinc-400');
+                active.classList.add('border-amber-500', 'text-amber-400');
+            }
+        }
+
+        function updateWeaponState() {
+            appState.weaponName = document.getElementById('weaponNameInput').value;
+            appState.platform = document.getElementById('weaponPlatformSelect').value;
+            document.getElementById('headerWeaponName').innerText = appState.weaponName;
+            document.getElementById('footWeapon').innerText = appState.weaponName;
+            if (appState.mode === 'workbench') buildWeapon3D();
+        }
+
+        function setWeaponColor(hexColor, btnEl) {
+            appState.weaponColor = parseInt(hexColor.replace('#', '0x'));
+            document.querySelectorAll('.weapon-color-btn').forEach(b => b.className = "weapon-color-btn p-3 rounded-xl border-2 border-zinc-800 bg-zinc-900 text-xs font-medium text-center transition");
+            btnEl.className = "weapon-color-btn p-3 rounded-xl border-2 border-amber-500 bg-zinc-800 text-xs font-medium text-center transition";
+            if (appState.mode === 'workbench') buildWeapon3D();
+        }
+
+        function setBarrelAccessory(acc, btnEl) {
+            appState.barrelAcc = acc;
+            document.querySelectorAll('.barrel-acc-btn').forEach(b => b.className = "barrel-acc-btn p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 text-xs font-medium text-center transition");
+            btnEl.className = "barrel-acc-btn p-2.5 rounded-xl border border-amber-500 bg-amber-500/10 text-amber-300 text-xs font-medium text-center transition";
+            if (appState.mode === 'workbench') buildWeapon3D();
+        }
+
+        function setMagType(type, cap, cardEl) {
+            appState.magType = type;
+            appState.magCapacity = cap;
+            document.querySelectorAll('.mag-card').forEach(c => c.className = "mag-card p-3 rounded-xl border-2 border-zinc-800 bg-zinc-950 cursor-pointer transition hover:border-zinc-700");
+            cardEl.className = "mag-card p-3 rounded-xl border-2 border-amber-500 bg-amber-500/10 cursor-pointer transition";
+            
+            let magName = "Padrão 15R";
+            if (type === 'extended') magName = "Estendido 30R";
+            if (type === 'drum') magName = "Tambor 75R";
+            document.getElementById('headerMagName').innerText = magName;
+            document.getElementById('footMag').innerText = `${cap} Munições`;
+
+            if (appState.mode === 'workbench') buildWeapon3D();
+        }
+
+        function setMagMaterial(mat, btnEl) {
+            appState.magMaterial = mat;
+            document.querySelectorAll('.mag-mat-btn').forEach(b => b.className = "mag-mat-btn p-2.5 rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-400 text-xs font-medium text-center transition");
+            btnEl.className = "mag-mat-btn p-2.5 rounded-xl border border-amber-500 bg-amber-500/10 text-amber-300 text-xs font-medium text-center transition";
+            if (appState.mode === 'workbench') buildWeapon3D();
+        }
+
+        function updateCaseLength(val) {
+            appState.caseLength = parseFloat(val);
+            document.getElementById('caseLengthVal').innerText = val + " mm";
+        }
+
+        function updateBulletSharpness(val) {
+            appState.bulletSharpness = parseFloat(val);
+            let desc = "Super Pontudo (VLD Match)";
+            if (val < 1.5) desc = "Chato / Rompudo (Round Nose)";
+            else if (val < 2.5) desc = "Padrão OGiva Média";
+            document.getElementById('bulletSharpnessVal').innerText = desc;
+            document.getElementById('footTip').innerText = `${desc} (${val})`;
+        }
+
+        function updateBulletWeight(val) {
+            appState.bulletWeight = parseInt(val);
+            document.getElementById('bulletWeightVal').innerText = val + " gr";
+        }
+
+        function updatePowder(val) {
+            appState.powderGrains = parseFloat(val);
+            document.getElementById('powderGrainsVal').innerText = val + " gr";
+            
+            const vel = Math.round(350 + (val * 12));
+            const energy = Math.round(0.5 * (appState.bulletWeight * 0.00006479891) * Math.pow(vel, 2));
+            document.getElementById('resVelocity').innerText = vel + " m/s";
+            document.getElementById('resEnergy').innerText = energy + " Joules";
+        }
+
+        function updateCaliberSettings() {
+            appState.caliber = document.getElementById('caliberSelect').value;
+        }
+
+        function resetLab() {
+            appState.weaponName = "Tático Viper M4";
+            document.getElementById('weaponNameInput').value = "Tático Viper M4";
+            document.getElementById('weaponPlatformSelect').value = "rifle";
+            appState.platform = "rifle";
+            appState.bulletSharpness = 3.0;
+            document.getElementById('bulletSharpnessRange').value = 3.0;
+            updateBulletSharpness(3.0);
+            if(appState.mode === 'flight') returnToWorkbench();
+            else buildWeapon3D();
+            switchTab(1);
+        }
+
+        // Initialize Three.js on window load
+        window.onload = function() {
+            initThree();
+            updatePowder(6.5);
+        };
+    </script>
+</body>
+</html>
